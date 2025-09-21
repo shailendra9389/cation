@@ -4,34 +4,25 @@ import * as THREE from 'three'
 import { Suspense, useEffect, useRef, useState } from 'react'
 import './ThreeDViewer.css'
 import RASPBERRY_PI_CONFIG from '../config/raspberryPi.js'
-
 function Model({ scale = 1 }) {
-  const { scene } = useGLTF('./resine_chilanti.glb', {
-    // Optimize loading for Raspberry Pi
-    // draco: {
-    //   decoderPath: 'https://www.gstatic.com/draco/versioned/decoders/1.5.5/',
-    // },
-  })
+  const { scene } = useGLTF('./resine_chilanti.glb')
   const ref = useRef()
+  const [selectedPart, setSelectedPart] = useState(null)
 
   useEffect(() => {
-    // Premium stainless steel material
     const stainlessMaterial = new THREE.MeshStandardMaterial({
-      color: new THREE.Color(0xd9d9d9), // Medium bright silver
-      metalness: 0.6,    // Highly metallic
-      roughness: 0.2,    // Slightly rough for realistic metal
+      color: new THREE.Color(0xd9d9d9),
+      metalness: 0.6,
+      roughness: 0.2,
       envMapIntensity: 1.8,
       side: THREE.DoubleSide
     })
 
     scene.traverse((child) => {
       if (child.isMesh) {
-        // Ensure proper geometry rendering
         if (!child.geometry.attributes.normal) {
           child.geometry.computeVertexNormals()
         }
-        
-        // Dispose old materials to prevent memory leaks
         if (child.material) {
           if (Array.isArray(child.material)) {
             child.material.forEach(mat => mat.dispose())
@@ -39,17 +30,94 @@ function Model({ scale = 1 }) {
             child.material.dispose()
           }
         }
-        
-        // Apply new material
         child.material = stainlessMaterial.clone()
-        child.castShadow = true;
-        child.receiveShadow = true;
+        child.castShadow = true
+        child.receiveShadow = true
+        child.userData = { name: child.name || "Unnamed Mesh" }
       }
     })
   }, [scene])
 
-  return <primitive ref={ref} object={scene} scale={scale} position={[0, -0.5, 0]} rotation={[0, Math.PI/4, 0]} />
+  const handleBackgroundClick = () => {
+    setSelectedPart(null) // Hide label when clicking elsewhere
+  }
+
+  return (
+    <>
+      {/* Background plane to catch clicks for hiding labels */}
+      <mesh 
+        position={[0, 0, 0]} 
+        onClick={handleBackgroundClick}
+        visible={false}
+      >
+        <planeGeometry args={[100, 100]} />
+        <meshBasicMaterial transparent opacity={0} />
+      </mesh>
+      
+      <primitive
+        ref={ref}
+        object={scene}
+        scale={scale}
+        position={[0, -0.5, 0]}
+        rotation={[0, Math.PI / 4, 0]}
+        onClick={(e) => {
+          e.stopPropagation()
+          console.log("Clicked Part:", e.object.userData.name)
+          console.log("Selected Part:", e.object)
+          
+          // Store the click position for positioning the label
+          const clickPosition = e.point
+          e.object.clickPosition = clickPosition
+          
+          setSelectedPart(e.object) // save the clicked mesh
+        }}
+        onPointerOver={(e) => {
+          document.body.style.cursor = 'pointer'
+        }}
+        onPointerOut={(e) => {
+          document.body.style.cursor = 'default'
+        }}
+      >
+        {selectedPart && (
+          <Html
+            position={selectedPart.clickPosition ? [
+              selectedPart.clickPosition.x,
+              selectedPart.clickPosition.y + 0.5,  // Slightly above the click point
+              selectedPart.clickPosition.z
+            ] : [0, 2, 0]}  // Fallback position
+            transform
+            occlude={false}  // Don't hide behind objects
+            center
+          >
+            <div className="object-name-label">
+              {selectedPart.userData?.name || selectedPart.name || 'Unknown Object'}
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setSelectedPart(null)
+                }}
+                style={{
+                  marginLeft: '8px',
+                  background: 'rgba(255,255,255,0.8)',
+                  border: 'none',
+                  borderRadius: '50%',
+                  width: '20px',
+                  height: '20px',
+                  cursor: 'pointer',
+                  fontSize: '12px',
+                  color: 'black'
+                }}
+              >
+                ×
+              </button>
+            </div>
+          </Html>
+        )}
+      </primitive>
+    </>
+  )
 }
+
 
 export default function ThreeDViewer({ scale = 1 }) {
   // State to track viewport dimensions

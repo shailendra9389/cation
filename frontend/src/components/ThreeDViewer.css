@@ -83,10 +83,70 @@
   }
 }
 
+/* Object name label styles */
+.object-name-label-permanent {
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.object-name-label-selected {
+  background: rgba(0, 0, 0, 0.9);
+  color: white;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  border: 2px solid #007bff;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+  pointer-events: auto;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+}
+
+@keyframes fadeInScale {
+  0% {
+    opacity: 0;
+    transform: scale(0.8) translateY(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Responsive adjustments for object name label */
+@media screen and (max-width: 1280px) {
+  .object-name-label {
+    font-size: 12px;
+    padding: 4px 8px;
+  }
+}
+
+@media screen and (max-width: 800px) {
+  .object-name-label {
+    font-size: 10px;
+    padding: 3px 6px;
+  }
+}
+
 /* Performance optimizations for lower-powered devices */
 @media screen and (max-resolution: 150dpi) {
   /* Lower resolution shadows and effects for better performance */
   .threeDViewer-container canvas {
     image-rendering: optimizeSpeed;
+  }
+  
+  .object-name-label {
+    backdrop-filter: none;
+    box-shadow: none;
   }
 }
